@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Cake, Heart, Gift, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -9,9 +9,12 @@ export default function BirthdayGreeting() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [photoCounter, setPhotoCounter] = useState(0)
   const [showSurprise, setShowSurprise] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const [confettiPieces, setConfettiPieces] = useState<
     Array<{ id: number; left: number; delay: number; duration: number; color: string }>
   >([])
+
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const photos = [
     "https://res.cloudinary.com/dudseghqo/image/upload/v1754033829/z6862889763652_ad2b7dd627bdb76e3eaa0577446687a1_u9i6jf.jpg",
@@ -36,10 +39,33 @@ export default function BirthdayGreeting() {
     setConfettiPieces(pieces)
   }, [])
 
+  const playBirthdaySong = () => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.currentTime = 0 // Reset to beginning
+        audioRef.current.play()
+        setIsPlaying(true)
+      } catch (error) {
+        console.log("Audio playback failed:", error)
+      }
+    }
+  }
+
+  const stopBirthdaySong = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setIsPlaying(false)
+    }
+  }
+
   const handleSurprise = () => {
     setShowSurprise(true)
     setShowPhotos(true)
     setPhotoCounter((prev) => prev + 1)
+
+    // Play birthday song
+    playBirthdaySong()
 
     // Start photo slideshow
     let photoIndex = 0
@@ -67,11 +93,26 @@ export default function BirthdayGreeting() {
       setShowPhotos(false)
       setCurrentPhotoIndex(0)
       setConfettiPieces((prev) => prev.slice(0, 50))
+      stopBirthdaySong() // Stop music when slideshow ends
     }, 12000) // Extended to 12 seconds for photo slideshow
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-200 via-purple-100 via-blue-100 to-yellow-200 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Hidden Audio Element */}
+      <audio
+        ref={audioRef}
+        preload="auto"
+        onEnded={() => setIsPlaying(false)}
+        onError={() => console.log("Audio failed to load")}
+      >
+        <source
+          src="https://res.cloudinary.com/dudseghqo/video/upload/v1754104430/Happy_Birthday_Remix_2020_-_Ba%CC%89n_Nha%CC%A3c_Cu%CC%89a_HeineKen_%C4%90ang_%C4%90u%CC%9Bo%CC%9B%CC%A3c_Su%CC%9B%CC%89_Du%CC%A3ng_Nhie%CC%82%CC%80u_Tre%CC%82n_TikTok_lj8eno.mp3"
+          type="audio/mpeg"
+        />
+        Your browser does not support the audio element.
+      </audio>
+
       {/* Enhanced Magical Background */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Floating geometric shapes with glow effects */}
@@ -164,6 +205,24 @@ export default function BirthdayGreeting() {
             🎂
           </div>
         ))}
+
+        {/* Musical notes when playing */}
+        {isPlaying &&
+          Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={`note-${i}`}
+              className="absolute text-purple-400 animate-bounce"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                fontSize: `${12 + Math.random() * 8}px`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${1.5 + Math.random() * 1}s`,
+              }}
+            >
+              🎵
+            </div>
+          ))}
 
         {/* Magical circles with gradient */}
         <div
@@ -273,7 +332,7 @@ export default function BirthdayGreeting() {
             className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-full text-lg shadow-lg transform hover:scale-110 transition-all duration-300 animate-pulse"
             disabled={showSurprise}
           >
-            {showSurprise ? "🎊 Bất ngờ! 🎊" : "🎁 Bất ngờ nhỏ ! 🎁"}
+            {showSurprise ? "🎊 Bất ngờ! 🎵" : "🎁 Bất ngờ nhỏ ! 🎁"}
           </Button>
 
           {/* Surprise Message */}
@@ -282,6 +341,9 @@ export default function BirthdayGreeting() {
               <p className="text-2xl font-bold text-transparent bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text animate-bounce">
                 🎉 Hope your birthday is absolutely magical! 🎉
               </p>
+              {isPlaying && (
+                <p className="text-lg text-purple-600 mt-2 animate-pulse">🎵 Playing birthday song... 🎵</p>
+              )}
             </div>
           )}
         </div>
@@ -345,6 +407,7 @@ export default function BirthdayGreeting() {
               onClick={() => {
                 setShowPhotos(false)
                 setShowSurprise(false)
+                stopBirthdaySong()
               }}
               className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-all duration-200"
             >
@@ -355,11 +418,17 @@ export default function BirthdayGreeting() {
             <h2 className="text-lg font-semibold">My Truc's Birthday Memories ✨</h2>
 
             <button
-              onClick={() => setShowSurprise(!showSurprise)}
+              onClick={() => {
+                if (isPlaying) {
+                  stopBirthdaySong()
+                } else {
+                  playBirthdaySong()
+                }
+              }}
               className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-all duration-200"
             >
-              <span className="text-sm">⏸</span>
-              <span className="text-sm font-medium">Pause</span>
+              <span className="text-sm">{isPlaying ? "⏸" : "▶"}</span>
+              <span className="text-sm font-medium">{isPlaying ? "Pause" : "Play"}</span>
             </button>
           </div>
 
