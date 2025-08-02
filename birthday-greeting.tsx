@@ -13,16 +13,16 @@ export default function BirthdayGreeting() {
   const [confettiPieces, setConfettiPieces] = useState<
     Array<{ id: number; left: number; delay: number; duration: number; color: string }>
   >([])
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const photos = [
-    "https://res.cloudinary.com/dudseghqo/image/upload/v1754033829/z6862889763652_ad2b7dd627bdb76e3eaa0577446687a1_u9i6jf.jpg",
+    "https://res.cloudinary.com/dudseghqo/image/upload/v1754103538/z6865349372438_48370ad2644b870f88ed71a4ce31bf02_esn9eg.jpg",
+    "https://res.cloudinary.com/dudseghqo/image/upload/v1754103537/z6865349372452_1769fa7f74f4d59aa00b9519793516cd_bkoxih.jpg",
+    "https://res.cloudinary.com/dudseghqo/image/upload/v1754103537/z6865349372443_b4711d4eb9492b0e36548e2bc7502513_ilelpd.jpg",
     "https://res.cloudinary.com/dudseghqo/image/upload/v1754033851/z6862889765008_5ac25775e103a59193252aa97fa30975_mdulmf.jpg",
-    "https://res.cloudinary.com/dudseghqo/image/upload/v1754034658/z6862889755989_8ddcf9a44a789702df7f87b90bb48120_hvm2xy.jpg",
-    "https://res.cloudinary.com/dudseghqo/image/upload/v1754034662/z6862889749956_4d7b1d7791596c8627dd5e1e1462ab4d_bfkylu.jpg",
-    "https://res.cloudinary.com/dudseghqo/image/upload/v1754035049/z6862972813711_ec98b982892eab059e858c4972dacf50_qf4duv.jpg",
-    "https://res.cloudinary.com/dudseghqo/image/upload/v1754103537/z6865349372382_778a29b54069ed74898ed0bc2d48e7bc_mwpavw.jpg",
+    "https://res.cloudinary.com/dudseghqo/image/upload/v1754033829/z6862889763652_ad2b7dd627bdb76e3eaa0577446687a1_u9i6jf.jpg",
   ]
 
   // Generate initial confetti
@@ -56,6 +56,11 @@ export default function BirthdayGreeting() {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
       setIsPlaying(false)
+      // Also stop the slideshow when manually stopping the song
+      setShowSurprise(false)
+      setShowPhotos(false)
+      setCurrentPhotoIndex(0)
+      setConfettiPieces((prev) => prev.slice(0, 50))
     }
   }
 
@@ -67,12 +72,29 @@ export default function BirthdayGreeting() {
     // Play birthday song
     playBirthdaySong()
 
-    // Start photo slideshow
+    // Start photo slideshow with smooth transitions
     let photoIndex = 0
     const slideInterval = setInterval(() => {
-      photoIndex = (photoIndex + 1) % photos.length
-      setCurrentPhotoIndex(photoIndex)
-    }, 2000)
+      setIsTransitioning(true)
+
+      setTimeout(() => {
+        photoIndex = (photoIndex + 1) % photos.length
+        setCurrentPhotoIndex(photoIndex)
+        setIsTransitioning(false)
+      }, 200) // Brief pause for transition effect
+    }, 3000) // Increased to 3 seconds for better viewing
+
+    // Store the interval ID so we can clear it when song ends
+    if (audioRef.current) {
+      audioRef.current.onended = () => {
+        clearInterval(slideInterval)
+        setShowSurprise(false)
+        setShowPhotos(false)
+        setCurrentPhotoIndex(0)
+        setConfettiPieces((prev) => prev.slice(0, 50))
+        setIsPlaying(false)
+      }
+    }
 
     // Generate more confetti for the surprise
     const newPieces = Array.from({ length: 100 }, (_, i) => ({
@@ -85,16 +107,6 @@ export default function BirthdayGreeting() {
       ],
     }))
     setConfettiPieces((prev) => [...prev, ...newPieces])
-
-    // Reset surprise state after animation
-    setTimeout(() => {
-      clearInterval(slideInterval)
-      setShowSurprise(false)
-      setShowPhotos(false)
-      setCurrentPhotoIndex(0)
-      setConfettiPieces((prev) => prev.slice(0, 50))
-      stopBirthdaySong() // Stop music when slideshow ends
-    }, 12000) // Extended to 12 seconds for photo slideshow
   }
 
   return (
@@ -107,7 +119,7 @@ export default function BirthdayGreeting() {
         onError={() => console.log("Audio failed to load")}
       >
         <source
-          src="https://res.cloudinary.com/dudseghqo/video/upload/v1754104430/Happy_Birthday_Remix_2020_-_Ba%CC%89n_Nha%CC%A3c_Cu%CC%89a_HeineKen_%C4%90ang_%C4%90u%CC%9Bo%CC%9B%CC%A3c_Su%CC%9B%CC%89_Du%CC%A3ng_Nhie%CC%82%CC%80u_Tre%CC%82n_TikTok_lj8eno.mp3"
+          src="https://res.cloudinary.com/dudseghqo/video/upload/v1754104430/Happy_Birthday_Remix_2020_-_Ba%CC%89n_Nha%CC%A3c_Cu%CC%89a_HeineKen_%C4%90ang_%C4%90u%CC%9Bo%CC%9B%CC%A3c_Su%CC%9B%CC%89_Du%CC%A3ng_Nhie%CC%82%CC%80%CC%80u_Tre%CC%82n_TikTok_lj8eno.mp3"
           type="audio/mpeg"
         />
         Your browser does not support the audio element.
@@ -456,14 +468,33 @@ export default function BirthdayGreeting() {
                 ›
               </button>
 
-              {/* Photo display - Much larger */}
+              {/* Photo display - Much larger with smooth transitions */}
               <div className="bg-black/20 rounded-3xl p-6 backdrop-blur-sm shadow-2xl">
                 <div className="relative overflow-hidden rounded-2xl">
-                  <img
-                    src={photos[currentPhotoIndex] || "/placeholder.svg"}
-                    alt={`Memory ${currentPhotoIndex + 1}`}
-                    className="w-full h-[70vh] object-cover transition-all duration-500"
-                  />
+                  <div className="relative w-full h-[70vh]">
+                    {photos.map((photo, index) => (
+                      <img
+                        key={index}
+                        src={photo || "/placeholder.svg"}
+                        alt={`Memory ${index + 1}`}
+                        className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${
+                          index === currentPhotoIndex ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-105 blur-sm"
+                        }`}
+                        style={{
+                          transform:
+                            index === currentPhotoIndex
+                              ? "translateX(0)"
+                              : index < currentPhotoIndex
+                                ? "translateX(-100%)"
+                                : "translateX(100%)",
+                          zIndex: index === currentPhotoIndex ? 10 : 1,
+                        }}
+                      />
+                    ))}
+
+                    {/* Overlay gradient for smooth transitions */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/10 pointer-events-none" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -519,9 +550,46 @@ export default function BirthdayGreeting() {
             transform: translateY(0);
           }
         }
+
+        @keyframes slideIn {
+          0% {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideOut {
+          0% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+        }
+
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: scale(1.1);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
         
         .animate-fade-in {
           animation: fade-in 1s ease-out forwards;
+        }
+
+        .photo-transition {
+          animation: fadeInScale 1s ease-out;
         }
       `}</style>
     </div>
