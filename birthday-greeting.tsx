@@ -19,6 +19,7 @@ export default function BirthdayGreeting() {
     "https://res.cloudinary.com/dudseghqo/image/upload/v1754034658/z6862889755989_8ddcf9a44a789702df7f87b90bb48120_hvm2xy.jpg",
     "https://res.cloudinary.com/dudseghqo/image/upload/v1754034662/z6862889749956_4d7b1d7791596c8627dd5e1e1462ab4d_bfkylu.jpg",
     "https://res.cloudinary.com/dudseghqo/image/upload/v1754035049/z6862972813711_ec98b982892eab059e858c4972dacf50_qf4duv.jpg",
+    "https://res.cloudinary.com/dudseghqo/image/upload/v1754103537/z6865349372382_778a29b54069ed74898ed0bc2d48e7bc_mwpavw.jpg",
   ]
 
   // Generate initial confetti
